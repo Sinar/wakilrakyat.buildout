@@ -1,9 +1,17 @@
-#bin/instance -OPlone3 debug
-
-from plone.dexterity.utils import createContentInContainer
 import pandas
+from z3c.relationfield import Relation
+from plone import api
+from zope import component
+from zope.intid.interfaces import IIntIds
+from z3c.relationfield import RelationValue
+from plone import api
+from plone.dexterity.utils import createContentInContainer
+import transaction
 
-logos = {'bn':'Barisan Nasional',
+portal_catalog = api.portal.get_tool('portal_catalog')
+intids = component.getUtility(IIntIds)
+
+logos = {'bn': 'Barisan Nasional',
          'bjis': 'Barisan Jemaah Islamiah Se-Malaysia',
          'dap': 'Parti Tindakan Demokratik',
          'par': 'Parti Alternative Rakyat',
@@ -26,31 +34,31 @@ logos = {'bn':'Barisan Nasional',
          'pprks': 'Pertubuhan Perpaduan Rakyat Kebangsaan Sabah',
          'psm': 'Parti Sosialis Malaysia',
          'warisan': 'Parti Warisan Sabah'
-          }
+         }
 
-df = pandas.read_csv('scripts/parlimen.csv')
+df = pandas.read_csv('scripts/selangor.csv')
 
-politicians_df = df[['person_name_en','on_behalf_of_name_ms']]
+politicians_df = df[['person_name_en', 'on_behalf_of_name_ms', 'area_name_ms']]
 
-for index,row in politicians_df.iterrows():
+#create candidates
+for index, row in politicians_df.iterrows():
+
     name = row['person_name_en']
     party = row['on_behalf_of_name_ms']
+    seat = row['area_name_ms']
+
+    print name, party, seat
+
+    folder = app.unrestrictedTraverse("Plone5/calon-calon")
+    item = createContentInContainer(folder,
+                                    'representative',
+                                    title=name)
 
     for key, value in logos.iteritems():
+
         if party == value:
-            print name,key
-    
-            folder = app.unrestrictedTraverse("Plone3/ms/calon-calon")
-            item = createContentInContainer(folder, 
-                    'representative', 
-                    title=name)
             item.logo = key
+            print "Assigned Logo"
 
-        else 
-            folder = app.unrestrictedTraverse("Plone3/ms/calon-calon")
-            item = createContentInContainer(folder, 
-                    'representative', 
-                    title=name)
-
-import transaction; transaction.commit()
-
+transaction.commit()
+app._p_jar.sync()
